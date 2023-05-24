@@ -48,6 +48,8 @@ from fastchat.protocol.openai_api_protocol import (
     ModelCard,
     ModelList,
     ModelPermission,
+    TokenCheckRequest,
+    TokenCheckResponse,
     UsageInfo,
 )
 
@@ -67,7 +69,7 @@ headers = {"User-Agent": "FastChat API Server"}
 
 def create_error_response(code: int, message: str) -> JSONResponse:
     return JSONResponse(
-        ErrorResponse(message=message, code=code).dict(), status_code=500
+        ErrorResponse(message=message, code=code).dict(), status_code=400
     )
 
 
@@ -112,17 +114,13 @@ async def check_length(request, prompt, max_tokens):
         )
         token_num = response.json()["count"]
 
-    max_new_tokens = max_tokens
-    # TODO: Fix this for other models
-    context_len = 2048
-
-    if token_num + max_new_tokens > context_len:
+    if token_num + max_tokens > context_len:
         return create_error_response(
             ErrorCode.CONTEXT_OVERFLOW,
             f"This model's maximum context length is {context_len} tokens. "
-            f"However, you requested {max_new_tokens + token_num} tokens "
+            f"However, you requested {max_tokens + token_num} tokens "
             f"({token_num} in the messages, "
-            f"{max_new_tokens} in the completion). "
+            f"{max_tokens} in the completion). "
             f"Please reduce the length of the messages or completion.",
         )
     else:
@@ -282,6 +280,39 @@ async def show_available_models():
     for m in models:
         model_cards.append(ModelCard(id=m, root=m, permission=[ModelPermission()]))
     return ModelList(data=model_cards)
+
+
+# TODO: Have check_length and count_tokens share code.
+@app.post("/v1/token_check")
+async def count_tokens(request: TokenCheckRequest):
+    """
+    Checks the token count against your message
+    This is not part of the OpenAI API spec.
+    """
+    async with httpx.AsyncClient() as client:
+        worker_addr = await _get_worker_address(request.model, client)
+
+        response = await client.post(
+            worker_addr + "/model_details",
+            headers=headers,
+            json={},
+            timeout=WORKER_API_TIMEOUT,
+        )
+        context_len = response.json()["context_length"]
+
+        response = await client.post(
+            worker_addr + "/count_token",
+            headers=headers,
+            json={"prompt": request.prompt},
+            timeout=WORKER_API_TIMEOUT,
+        )
+        token_num = response.json()["count"]
+
+    can_fit = True
+    if token_num + request.max_tokens > context_len:
+        can_fit = False
+
+    return TokenCheckResponse(fits=can_fit, contextLength=context_len, tokenCount=token_num)
 
 
 @app.post("/v1/chat/completions")

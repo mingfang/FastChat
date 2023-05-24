@@ -439,19 +439,7 @@ pre {
 )
 
 
-def build_single_model_ui(models):
-    notice_markdown = """
-# 🏔️ Chat with Open Large Language Models
-- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://lmsys.org/blog/2023-03-30-vicuna/)
-- Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/)
-- [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/h6kCZb72G7)
-
-### Terms of use
-By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.**
-
-### Choose a model to chat with
-"""
-
+def get_model_description_md(models):
     model_description_md = """
 | | | |
 | ---- | ---- | ---- |
@@ -459,26 +447,43 @@ By using this service, users are required to agree to the following terms: The s
     ct = 0
     visited = set()
     for i, name in enumerate(models):
-        if ct % 3 == 0:
-            model_description_md += "|"
-
         if name in model_info:
             minfo = model_info[name]
             if minfo.simple_name in visited:
                 continue
             visited.add(minfo.simple_name)
-            model_description_md += (
-                f" [{minfo.simple_name}]({minfo.link}): {minfo.description} |"
+            one_model_md = (
+                f"[{minfo.simple_name}]({minfo.link}): {minfo.description}"
             )
         else:
             visited.add(name)
-            model_description_md += f" [{name}](): Add the description at fastchat/model/model_registry.py |"
+            one_model_md = f"[{name}](): Add the description at fastchat/model/model_registry.py"
 
+        if ct % 3 == 0:
+            model_description_md += "|"
+        model_description_md += f" {one_model_md} |"
         if ct % 3 == 2:
             model_description_md += "\n"
         ct += 1
+    return model_description_md
+
+
+def build_single_model_ui(models):
+    notice_markdown = """
+# 🏔️ Chat with Open Large Language Models
+- Vicuna: An Open-Source Chatbot Impressing GPT-4 with 90% ChatGPT Quality. [[Blog post]](https://lmsys.org/blog/2023-03-30-vicuna/)
+- Koala: A Dialogue Model for Academic Research. [[Blog post]](https://bair.berkeley.edu/blog/2023/04/03/koala/)
+- [[GitHub]](https://github.com/lm-sys/FastChat) [[Twitter]](https://twitter.com/lmsysorg) [[Discord]](https://discord.gg/KjdtsE9V)
+
+### Terms of use
+By using this service, users are required to agree to the following terms: The service is a research preview intended for non-commercial use only. It only provides limited safety measures and may generate offensive content. It must not be used for any illegal, harmful, violent, racist, or sexual purposes. **The service collects user dialogue data and reserves the right to distribute it under a Creative Commons Attribution (CC-BY) license.**
+
+### Choose a model to chat with
+"""
+
 
     state = gr.State()
+    model_description_md = get_model_description_md(models)
     gr.Markdown(notice_markdown + model_description_md, elem_id="notice_markdown")
 
     with gr.Row(elem_id="model_selector_row"):
@@ -660,12 +665,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "--add-claude",
         action="store_true",
-        help="Add Anthropic's Claude models (claude-v1)",
+        help="Add Anthropic's Claude models (claude-v1, claude-instant-v1)",
     )
     parser.add_argument(
         "--add-bard",
         action="store_true",
-        help="Add Google's Bard model",
+        help="Add Google's Bard model (PaLM 2 for Chat: chat-bison@001)",
     )
     args = parser.parse_args()
     logger.info(f"args: {args}")
