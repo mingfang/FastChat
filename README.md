@@ -224,6 +224,9 @@ See [docs/openai_api.md](docs/openai_api.md).
 ### Hugging Face Generation APIs
 See [fastchat/serve/huggingface_api.py](fastchat/serve/huggingface_api.py).
 
+### LangChain Integration
+See [docs/langchain_integration](docs/langchain_integration.md).
+
 ## Evaluation
 
 Our AI-enhanced evaluation pipeline is based on GPT-4. This section provides a high-level summary of the pipeline. For detailed instructions, please refer to the [evaluation](fastchat/eval) documentation.
@@ -320,7 +323,7 @@ torchrun --nproc_per_node=4 --master_port=9778 fastchat/train/train_flant5.py \
     --preprocessed_path ./preprocessed_data/processed.json \
     --gradient_checkpointing True 
 ```
-After training, please use our post-processing [function](https://github.com/lm-sys/FastChat/blob/main/fastchat/utils.py#L164) to update the saved model weight. Additional discussions can be found [here](https://github.com/lm-sys/FastChat/issues/643).
+After training, please use our post-processing [function](https://github.com/lm-sys/FastChat/blob/75d8ab26ee308f9cf0990976508232f06dd421e4/fastchat/utils.py#L164) to update the saved model weight. Additional discussions can be found [here](https://github.com/lm-sys/FastChat/issues/643).
 
 ### Fine-tuning on Any Cloud with SkyPilot
 [SkyPilot](https://github.com/skypilot-org/skypilot) is a framework built by UC Berkeley for easily and cost effectively running ML workloads on any cloud (AWS, GCP, Azure, Lambda, etc.). 
